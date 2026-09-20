@@ -10,6 +10,11 @@ Usage:
     uv run app.py --query         # start an interactive Q&A session
     uv run app.py --add-pdf PATH  # (custom feature) add a PDF at runtime
     uv run app.py --add-url URL   # (custom feature) add a URL at runtime
+
+Inside an interactive Q&A session (--query), you can also add sources on the
+fly without restarting, using:
+    /addpdf <path>
+    /addurl <url>
 """
 
 import os
@@ -232,11 +237,30 @@ def run_query_loop():
     """Start an interactive command-line question-answering session."""
     rag_chain = build_rag_chain()
     print("Welcome to DocuMind. Ask a question, or press Enter on a blank line to quit.")
+    print("Type /addpdf <path> or /addurl <url> to add a new source at any time.")
     print_sources()
     while True:
         line = input("llm>> ")
         if not line:
             break
+
+        if line.startswith("/addpdf ") or line.startswith("/addurl "):
+            command, _, arg = line.partition(" ")
+            arg = arg.strip()
+            if not arg:
+                print(f"Usage: {command} <{'path' if command == '/addpdf' else 'url'}>")
+                continue
+            try:
+                if command == "/addpdf":
+                    load_pdf_file(arg)
+                    print(f"Added PDF: {arg}")
+                else:
+                    load_url_runtime(arg)
+                    print(f"Added URL: {arg}")
+            except Exception as e:
+                print(f"Failed to add source: {e}")
+            continue
+
         print(rag_chain.invoke(line))
 
 
