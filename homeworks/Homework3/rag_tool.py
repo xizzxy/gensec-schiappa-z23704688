@@ -30,7 +30,8 @@ RAG_CHROMA_PATH = os.getenv("RAG_CHROMA_PATH", "./rag_data/.chromadb")
 RAG_COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "homework3_rag")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
-RAG_TOP_K = int(os.getenv("RAG_TOP_K", "4"))
+RAG_TOP_K = int(os.getenv("RAG_TOP_K", "3"))
+RAG_MAX_CHUNK_CHARS = int(os.getenv("RAG_MAX_CHUNK_CHARS", "1200"))
 
 _vectorstore = None
 
@@ -103,21 +104,39 @@ def get_or_build_vectorstore():
 def format_retrieved_docs(docs):
     """Format retrieved document chunks into a single tool-result string.
 
+    Homework2's chunks can run several thousand characters each (and some
+    are near-duplicates of one another), which is large enough that a few
+    of them together can overflow a small local model's context window and
+    make the agent lose track of the ReAct output format entirely. To keep
+    the tool's result bounded regardless of source chunk size, duplicate
+    chunks are dropped and each remaining chunk is truncated to
+    ``RAG_MAX_CHUNK_CHARS`` characters.
+
     Args:
         docs (list[langchain_core.documents.Document]): Chunks returned by
             the retriever, most relevant first.
 
     Returns:
-        str: Each chunk's source and text, separated for readability, or a
-        message stating that nothing relevant was found.
+        str: Each chunk's source and (possibly truncated) text, separated
+        for readability, or a message stating that nothing relevant was
+        found.
     """
     if not docs:
         return "No relevant documents were found in the RAG database."
 
     blocks = []
+    seen_content = set()
     for doc in docs:
+        if doc.page_content in seen_content:
+            continue
+        seen_content.add(doc.page_content)
+
+        text = doc.page_content
+        if len(text) > RAG_MAX_CHUNK_CHARS:
+            text = text[:RAG_MAX_CHUNK_CHARS] + " [...truncated]"
+
         source = doc.metadata.get("source", "unknown")
-        blocks.append(f"[source: {source}]\n{doc.page_content}")
+        blocks.append(f"[source: {source}]\n{text}")
     return "\n\n---\n\n".join(blocks)
 
 
