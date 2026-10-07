@@ -52,6 +52,13 @@ Final Answer: the final answer to the original input question
 When using the Python_REPL tool, the Action Input must call print(...) around
 any value you want to see, since only printed output becomes the Observation.
 
+If the question references the RAG database or any documents, call
+rag_lookup before doing anything else.
+
+Every line that starts with "Thought:" must be immediately followed by
+either an "Action:" line or a "Final Answer:" line -- never leave a
+Thought without one of those two directly after it.
+
 Begin!
 
 Question: {input}
@@ -67,7 +74,7 @@ def build_agent_executor():
         PythonREPLTool (required by the assignment) and the custom
         rag_lookup tool from rag_tool.py.
     """
-    llm = ChatOllama(model=OLLAMA_CHAT_MODEL, base_url=OLLAMA_BASE_URL, temperature=0)
+    llm = ChatOllama(model=OLLAMA_CHAT_MODEL, base_url=OLLAMA_BASE_URL, temperature=0.3)
     tools = [PythonREPLTool(), rag_lookup]
     prompt = PromptTemplate.from_template(REACT_PROMPT_TEMPLATE)
     agent = create_react_agent(llm, tools, prompt)
@@ -76,7 +83,7 @@ def build_agent_executor():
         tools=tools,
         verbose=False,
         handle_parsing_errors=True,
-        max_iterations=6,
+        max_iterations=10,
     )
 
 
