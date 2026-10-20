@@ -1,0 +1,5 @@
+fastmcp
+fast-agent-mcp
+mcp-server-git
+mcp
+requests
