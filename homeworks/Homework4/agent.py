@@ -20,8 +20,14 @@ Usage (from homeworks/Homework4):
 """
 
 import asyncio
+from pathlib import Path
 
 from fast_agent.core.fastagent import FastAgent
+
+# Course repository root. This is the same directory fastagent.config.yaml
+# passes to mcp-server-git as ``--repository ../..`` (relative to this
+# folder); the git server rejects any other repo_path.
+REPO_PATH = Path(__file__).resolve().parents[2]
 
 # Only these git tools are ever offered to the model. Anything that can
 # modify or destroy repository state is deliberately absent.
@@ -35,7 +41,7 @@ READ_ONLY_GIT_TOOLS = [
     "git_branch",
 ]
 
-INSTRUCTION = """You are a helpful assistant for a student's course repository.
+INSTRUCTION = f"""You are a helpful assistant for a student's course repository.
 
 You have two sets of tools:
 
@@ -43,6 +49,13 @@ You have two sets of tools:
    individual commits, diffs, branches and working-tree status.
 2. Notes tools (server "notes") to manage short text notes:
    add_note, list_notes, get_note and delete_note.
+
+REPOSITORY PATH:
+- Every git tool call (git_log, git_status, git_branch, git_show, git_diff,
+  etc.) must pass exactly this repo_path:
+  {REPO_PATH}
+- Do not guess or try other paths such as "." or a subfolder; the git
+  server only accepts this one repository.
 
 GIT SAFETY RULES -- these are mandatory:
 - Only use READ-ONLY git tools: git_log, git_show, git_diff,

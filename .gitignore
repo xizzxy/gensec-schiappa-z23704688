@@ -4,3 +4,4 @@ env/
 __pycache__/
 fastagent.secrets.yaml
 homeworks/Homework4/.fast-agent/
+homeworks/Homework4/notes.json
